@@ -40,7 +40,7 @@ func main() {
 		companyNames[string(values[0])] = string(values[1])
 	}
 
-	for _, companyName := range companyNames {
+	for code, companyName := range companyNames {
 		// postパラメータ生成
 		postParams := makePostParams(companyName)
 
@@ -57,6 +57,14 @@ func main() {
 		// preタグ内のaタグ内テキストを出力
 		doc.Find("pre").Each(func(_ int, s *goquery.Selection) {
 			s.Find("a").Each(func(_ int, aSec *goquery.Selection){
+				_, err = db.Exec(
+					"INSERT INTO domain_list (m_company_code, domain, reporting_date) VALUES (?, ?, ?)",
+					code,
+					aSec.Text(),
+					"2017-09-09 00:00:00",
+				)
+				ifErrorNilIsPanic(err)
+
 				fmt.Println(aSec.Text())
 			})
 		})
@@ -65,9 +73,6 @@ func main() {
 
 		// 同一IP制限に引っかかるのでN秒待機
 		sleep()
-
-		// TODO : 後で消す
-		break
 	}
 }
 
