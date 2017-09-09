@@ -17,22 +17,13 @@ const SLEEP_TIME = 10;
 func main() {
 	fmt.Println("===== func main start!! =====")
 
-	//flag.Parse()
-
-	db, err := sql.Open("mysql", "root:root@/gois")
-
-	if err != nil {
-		panic(err.Error())
-	}
+	db := sqlOpen()
 
 	defer db.Close()
 
-	rows, err := db.Query("SELECT name FROM m_company")
-	if err != nil {
-		panic(err.Error())
-	}
+	rows := query(db, "SELECT code, name FROM m_company")
 
-	columns, err := rows.Columns()
+	columns, _ := rows.Columns()
 
 	values := make([]sql.RawBytes, len(columns))
 
@@ -41,32 +32,23 @@ func main() {
 		scanArgs[i] = &values[i]
 	}
 
-	companyNames := make([]string, 0)
+	companyNames := make(map[string]string, 0)
 	for rows.Next() {
 		err := rows.Scan(scanArgs...)
-		if err != nil {
-			panic(err.Error())
-		}
+		ifErrorNilIsPanic(err)
 
-		// カラム番号決め打ち
-		companyNames = append(companyNames, string(values[0]))
+		companyNames[string(values[0])] = string(values[1])
 	}
 
 	for _, companyName := range companyNames {
 		// postパラメータ生成
-		postParams := url.Values{}
-		postParams.Add("type", "DOM-HOLDER")
-		postParams.Add("key", companyName)
+		postParams := makePostParams(companyName)
 
 		// postリクエスト
 		resp, _ := http.PostForm(REQUEST_URL, postParams)
 		// レスポンスをgo-queryで解析
 		doc, err := goquery.NewDocumentFromResponse(resp)
-		if err != nil {
-			fmt.Println("Oops Sorry Http Error...")
-			fmt.Println(err)
-			return
-		}
+		ifErrorNilIsPanic(err)
 
 		defer resp.Body.Close()
 
@@ -82,6 +64,46 @@ func main() {
 		fmt.Println()
 
 		// 同一IP制限に引っかかるのでN秒待機
-		time.Sleep(SLEEP_TIME * time.Second)
+		sleep()
+
+		// TODO : 後で消す
+		break
 	}
+}
+
+// mysql open
+func sqlOpen() *sql.DB {
+	db, err := sql.Open("mysql", "root:root@/gois")
+	ifErrorNilIsPanic(err)
+
+	return db
+}
+
+// if err != nil is panic!
+func ifErrorNilIsPanic(err error) {
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+// make url.Values{}
+func makePostParams(value string) url.Values {
+	postParams := url.Values{}
+	postParams.Add("type", "DOM-HOLDER")
+	postParams.Add("key", value)
+
+	return postParams
+}
+
+// time.Sleep wrapper function
+func sleep() {
+	time.Sleep(SLEEP_TIME * time.Second)
+}
+
+// db.Query wrapper function
+func query(db *sql.DB, sql string) *sql.Rows {
+	rows, err := db.Query(sql)
+	ifErrorNilIsPanic(err)
+
+	return rows
 }
