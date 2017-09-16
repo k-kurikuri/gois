@@ -8,11 +8,30 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/go-sql-driver/mysql"
 	"time"
+	"encoding/json"
+	"io/ioutil"
 )
 
 const COMPANY_NAME_COLUMN = "name"
 const REQUEST_URL = "http://whois.jprs.jp"
 const SLEEP_TIME = 10;
+
+var (
+	IncomingUrl string = "https://hooks.slack.com/services/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"
+)
+
+type Company struct {
+	code string
+	name string
+}
+
+type Slack struct {
+	Text        string `json:"text"`        //投稿内容
+	Username    string `json:"username"`    //投稿者名 or Bot名（存在しなくてOK）
+	Icon_emoji  string `json:"icon_emoji"`  //アイコン絵文字
+	Icon_url    string `json:"icon_url"`    //アイコンURL（icon_emojiが存在する場合は、適応されない）
+	Channel     string `json:"channel"`     //#部屋名
+}
 
 func main() {
 	fmt.Println("===== func main start!! =====")
@@ -52,20 +71,45 @@ func main() {
 
 		defer resp.Body.Close()
 
-		fmt.Println(companyName)
+		fmt.Println(code + ":" + companyName)
 
 		// preタグ内のaタグ内テキストを出力
 		doc.Find("pre").Each(func(_ int, s *goquery.Selection) {
 			s.Find("a").Each(func(_ int, aSec *goquery.Selection){
-				_, err = db.Exec(
-					"INSERT INTO domain_list (m_company_code, domain, reporting_date) VALUES (?, ?, ?)",
-					code,
-					aSec.Text(),
-					"2017-09-09 00:00:00",
-				)
-				ifErrorNilIsPanic(err)
+				db := sqlOpen()
+				rows := query(db, "SELECT domain FROM domain_list WHERE m_company_code = " + code)
+				columns, _ := rows.Columns()
+				values := make([]sql.RawBytes, len(columns))
+				scanArgs := make([]interface{}, len(values))
+				for i := range values {
+					scanArgs[i] = &values[i]
+				}
 
-				fmt.Println(aSec.Text())
+				var whoisDomain string = aSec.Text()
+
+				isExist := false
+				for rows.Next() {
+					rows.Scan(scanArgs...)
+					if whoisDomain == string(values[0]) {
+						isExist = true
+					}
+				}
+
+				// 新しいドメインが存在した
+				if !isExist {
+					fmt.Println("new Domain -> " + whoisDomain)
+					_, err = db.Exec(
+						"INSERT INTO domain_list (m_company_code, domain, reporting_date) VALUES (?, ?, ?)",
+						code,
+						whoisDomain,
+						"2017-09-09 00:00:00",
+					)
+					ifErrorNilIsPanic(err)
+
+					noticeToSlack(code, companyName, whoisDomain)
+				}
+
+				defer db.Close()
 			})
 		})
 		fmt.Println("==========================================")
@@ -111,4 +155,24 @@ func query(db *sql.DB, sql string) *sql.Rows {
 	ifErrorNilIsPanic(err)
 
 	return rows
+}
+
+// slackのincoming-web-hookへ通知
+func noticeToSlack(code string, companyName string, domain string) {
+	params, _ := json.Marshal(Slack{
+		"new web-domain register\n" + code + ":" + companyName + "\n" + domain,
+		"gois",
+		":sushi:",
+		"",
+		"#company-new-domain"})
+
+	resp, _ := http.PostForm(
+		IncomingUrl,
+		url.Values{"payload": {string(params)}},
+	)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
+	println(string(body))
 }
