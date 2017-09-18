@@ -17,7 +17,7 @@ const REQUEST_URL = "http://whois.jprs.jp"
 const SLEEP_TIME = 10;
 
 var (
-	IncomingUrl string = "https://hooks.slack.com/services/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"
+    IncomingUrl string = "https://hooks.slack.com/services/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"
 )
 
 type Company struct {
@@ -164,7 +164,7 @@ func noticeToSlack(code string, companyName string, domain string) {
 		"gois",
 		":sushi:",
 		"",
-		"#company-new-domain"})
+		"#company-domain"})
 
 	resp, _ := http.PostForm(
 		IncomingUrl,
