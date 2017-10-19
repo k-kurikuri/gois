@@ -16,17 +16,17 @@ import (
 )
 
 const (
-	COMPANY_NAME_COLUMN = "name"
-	REQUEST_URL         = "http://whois.jprs.jp"
-	SLEEP_TIME          = 10
+	CompanyNameColumn = "name"
+	RequestUrl        = "http://whois.jprs.jp"
+	SleepTime         = 10
 )
 
 type Slack struct {
-	Text       string `json:"text"`
-	Username   string `json:"username"`
-	Icon_emoji string `json:"icon_emoji"`
-	Icon_url   string `json:"icon_url"`
-	Channel    string `json:"channel"`
+	Text      string `json:"text"`
+	UserName  string `json:"username"`
+	IconEmoji string `json:"icon_emoji"`
+	IconUrl   string `json:"icon_url"`
+	Channel   string `json:"channel"`
 }
 
 func main() {
@@ -65,7 +65,7 @@ func main() {
 		postParams := makePostParams(companyName)
 
 		// postリクエスト
-		resp, _ := http.PostForm(REQUEST_URL, postParams)
+		resp, _ := http.PostForm(RequestUrl, postParams)
 		// レスポンスをgo-queryで解析
 		doc, err := goquery.NewDocumentFromResponse(resp)
 		ifErrorNilIsPanic(err)
@@ -149,7 +149,7 @@ func makePostParams(value string) url.Values {
 
 // time.Sleep wrapper function
 func sleep() {
-	time.Sleep(SLEEP_TIME * time.Second)
+	time.Sleep(SleepTime * time.Second)
 }
 
 // db.Query wrapper function
