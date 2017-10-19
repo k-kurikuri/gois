@@ -21,11 +21,6 @@ const (
 	SLEEP_TIME = 10;
 )
 
-type Company struct {
-	code string
-	name string
-}
-
 type Slack struct {
 	Text        string `json:"text"`        //投稿内容
 	Username    string `json:"username"`    //投稿者名 or Bot名（存在しなくてOK）
@@ -128,7 +123,7 @@ func main() {
 
 // mysql open
 func sqlOpen() *sql.DB {
-	dataSource := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWORD") + "@/" + os.Getenv("DB_DATABASE")
+	dataSource := os.Getenv("DB_USER")+":"+os.Getenv("DB_PASSWORD")+"@/"+os.Getenv("DB_DATABASE")
 
 	db, err := sql.Open("mysql", dataSource)
 	ifErrorNilIsPanic(err)
