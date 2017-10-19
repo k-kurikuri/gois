@@ -1,32 +1,32 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"net/url"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/go-sql-driver/mysql"
-	"time"
-	"encoding/json"
-	"io/ioutil"
 	"github.com/joho/godotenv"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
+	"time"
 )
 
 const (
 	COMPANY_NAME_COLUMN = "name"
-	REQUEST_URL = "http://whois.jprs.jp"
-	SLEEP_TIME = 10;
+	REQUEST_URL         = "http://whois.jprs.jp"
+	SLEEP_TIME          = 10
 )
 
 type Slack struct {
-	Text        string `json:"text"`        //投稿内容
-	Username    string `json:"username"`    //投稿者名 or Bot名（存在しなくてOK）
-	Icon_emoji  string `json:"icon_emoji"`  //アイコン絵文字
-	Icon_url    string `json:"icon_url"`    //アイコンURL（icon_emojiが存在する場合は、適応されない）
-	Channel     string `json:"channel"`     //#部屋名
+	Text       string `json:"text"`
+	Username   string `json:"username"`
+	Icon_emoji string `json:"icon_emoji"`
+	Icon_url   string `json:"icon_url"`
+	Channel    string `json:"channel"`
 }
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal(".env file not found");
+		log.Fatal(".env file not found")
 	}
 
 	db := sqlOpen()
@@ -76,9 +76,9 @@ func main() {
 
 		// preタグ内のaタグ内テキストを出力
 		doc.Find("pre").Each(func(_ int, s *goquery.Selection) {
-			s.Find("a").Each(func(_ int, aSec *goquery.Selection){
+			s.Find("a").Each(func(_ int, aSec *goquery.Selection) {
 				db := sqlOpen()
-				rows := query(db, "SELECT domain FROM domain_list WHERE m_company_code = " + code)
+				rows := query(db, "SELECT domain FROM domain_list WHERE m_company_code = "+code)
 				columns, _ := rows.Columns()
 				values := make([]sql.RawBytes, len(columns))
 				scanArgs := make([]interface{}, len(values))
@@ -123,7 +123,7 @@ func main() {
 
 // mysql open
 func sqlOpen() *sql.DB {
-	dataSource := os.Getenv("DB_USER")+":"+os.Getenv("DB_PASSWORD")+"@/"+os.Getenv("DB_DATABASE")
+	dataSource := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWORD") + "@/" + os.Getenv("DB_DATABASE")
 
 	db, err := sql.Open("mysql", dataSource)
 	ifErrorNilIsPanic(err)
