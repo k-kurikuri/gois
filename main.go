@@ -10,14 +10,15 @@ import (
 	"time"
 	"encoding/json"
 	"io/ioutil"
+	"github.com/joho/godotenv"
+	"log"
+	"os"
 )
 
-const COMPANY_NAME_COLUMN = "name"
-const REQUEST_URL = "http://whois.jprs.jp"
-const SLEEP_TIME = 10;
-
-var (
-    IncomingUrl string = "https://hooks.slack.com/services/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"
+const (
+	COMPANY_NAME_COLUMN = "name"
+	REQUEST_URL = "http://whois.jprs.jp"
+	SLEEP_TIME = 10;
 )
 
 type Company struct {
@@ -35,6 +36,11 @@ type Slack struct {
 
 func main() {
 	fmt.Println("===== func main start!! =====")
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(".env file not found");
+	}
 
 	db := sqlOpen()
 
@@ -122,7 +128,9 @@ func main() {
 
 // mysql open
 func sqlOpen() *sql.DB {
-	db, err := sql.Open("mysql", "root:root@/gois")
+	dataSource := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWORD") + "@/" + os.Getenv("DB_DATABASE")
+
+	db, err := sql.Open("mysql", dataSource)
 	ifErrorNilIsPanic(err)
 
 	return db
@@ -167,7 +175,7 @@ func noticeToSlack(code string, companyName string, domain string) {
 		"#company-domain"})
 
 	resp, _ := http.PostForm(
-		IncomingUrl,
+		os.Getenv("INCOMING_URL"),
 		url.Values{"payload": {string(params)}},
 	)
 
