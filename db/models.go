@@ -3,7 +3,6 @@ package db
 import (
 	"time"
 	"os"
-	"github.com/joho/godotenv"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -22,10 +21,6 @@ type DomainList struct {
 	Domain string
 	ReportingDate time.Time
 	CreatedAt time.Time
-}
-
-func init() {
-	godotenv.Load()
 }
 
 func DbOpen() *gorm.DB {

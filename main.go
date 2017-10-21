@@ -15,21 +15,24 @@ import (
 )
 
 const (
-	companyNameColumn = "name"
 	requestUrl = "http://whois.jprs.jp"
 	sleepTime = 10
 )
 
+func init() {
+	err := godotenv.Load()
+
+	ifErrorNilIsPanic(err)
+}
+
 func main() {
 	fmt.Println("===== func main start!! =====")
-
-	err := godotenv.Load()
-	ifErrorNilIsPanic(err)
 
 	db := models.DbOpen()
 
 	defer db.Close()
 
+	// 全件取得
 	companies := []models.MCompany{}
 	db.Find(&companies)
 
@@ -78,7 +81,6 @@ func main() {
 		})
 
 		fmt.Println("==========================================")
-		fmt.Println()
 
 		// 同一IP制限に引っかかるのでN秒待機
 		sleep()
