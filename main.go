@@ -2,17 +2,16 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+	"github.com/k-kurikuri/gois/slack"
 )
 
 const (
@@ -20,14 +19,6 @@ const (
 	RequestUrl        = "http://whois.jprs.jp"
 	SleepTime         = 10
 )
-
-type Slack struct {
-	Text      string `json:"text"`
-	UserName  string `json:"username"`
-	IconEmoji string `json:"icon_emoji"`
-	IconUrl   string `json:"icon_url"`
-	Channel   string `json:"channel"`
-}
 
 func main() {
 	fmt.Println("===== func main start!! =====")
@@ -107,7 +98,7 @@ func main() {
 					)
 					ifErrorNilIsPanic(err)
 
-					noticeToSlack(code, companyName, whoisDomain)
+					slack.IncomingWebHook(code, companyName, whoisDomain)
 				}
 
 				defer db.Close()
@@ -160,22 +151,3 @@ func query(db *sql.DB, sql string) *sql.Rows {
 	return rows
 }
 
-// slackのincoming-web-hookへ通知
-func noticeToSlack(code string, companyName string, domain string) {
-	params, _ := json.Marshal(Slack{
-		"new web-domain register\n" + code + ":" + companyName + "\n" + domain,
-		"gois",
-		":sushi:",
-		"",
-		"#company-domain"})
-
-	resp, _ := http.PostForm(
-		os.Getenv("INCOMING_URL"),
-		url.Values{"payload": {string(params)}},
-	)
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	println(string(body))
-}
