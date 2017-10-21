@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/joho/godotenv"
+	models "github.com/k-kurikuri/gois/db"
+	"github.com/k-kurikuri/gois/slack"
 	"net/http"
 	"net/url"
-	"time"
-	"github.com/k-kurikuri/gois/slack"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-	models "github.com/k-kurikuri/gois/db"
 	"strconv"
+	"time"
 )
 
 const (
 	requestUrl = "http://whois.jprs.jp"
-	sleepTime = 10
+	sleepTime  = 10
 )
 
 func init() {
@@ -53,7 +53,7 @@ func main() {
 		// preタグ内のaタグ内テキストを出力
 		doc.Find("pre").Each(func(_ int, s *goquery.Selection) {
 			s.Find("a").Each(func(_ int, aSec *goquery.Selection) {
-				domainLists := []models.DomainList{};
+				domainLists := []models.DomainList{}
 				db.Find(&domainLists, "m_company_code=?", company.Code)
 
 				var whoisDomain string = aSec.Text()
