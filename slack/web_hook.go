@@ -8,10 +8,6 @@ import (
 	"net/url"
 )
 
-const (
-	incomingUrl = os.Getenv("INCOMING_URL")
-)
-
 type WebHookParam struct {
 	Text      string `json:"text"`
 	UserName  string `json:"username"`
@@ -29,7 +25,7 @@ func IncomingWebHook(code string, companyName string, domain string) {
 		"",
 		"#company-domain"})
 
-	resp, _ := http.PostForm(incomingUrl, url.Values{"payload": {string(params)}})
+	resp, _ := http.PostForm(os.Getenv("INCOMING_URL"), url.Values{"payload": {string(params)}})
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
